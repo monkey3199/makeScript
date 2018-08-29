@@ -1,4 +1,6 @@
 import os, re
+from docx import Document
+from docx.shared import Inches
 
 class bcolors:
     HEADER = '\033[95m'
@@ -35,12 +37,16 @@ class bcolors:
 
 def search(dirname):
     filenames = os.listdir(dirname)
-    fullFilenames = []
+    fileInfos = []
     for filename in filenames:
         full_filename = os.path.join(dirname, filename)
-        fullFilenames.append(full_filename)
+        fileInfo = {
+            'name': filename,
+            'fullPath': full_filename
+        }
+        fileInfos.append(fileInfo)
 
-    return fullFilenames
+    return fileInfos
 
 def extractText(filename):
     print ('start extract text... ', end = '')
@@ -48,21 +54,23 @@ def extractText(filename):
     try:
         subcriptFile = open(filename, 'r')
         text = ''
-        rmRegex = [
-            '^[0-9]\n$'
-        ]
+        rmRegex = { 
+            '^\d\n$': '',
+            '^\d{2}:\d{2}:\d{2},\d+ --> \d{2}:\d{2}:\d{2},\d+$': '',
+            '<.*?>': '',
+            '^\n$': ''
+        }
         
         while True:
             line = subcriptFile.readline()
             if not line: break
 
-            newline = line
-            for reg in rmRegex:
+            newLine = line
+            for reg in list(rmRegex.keys()):
                 p = re.compile(reg)
-                # p.sub('')
-                    
+                newLine = p.sub(rmRegex[reg], newLine)
 
-        text = filename
+            text += newLine
 
         print(bcolors.colorText('Success!', 'OKGREEN'))
         return text
@@ -71,20 +79,31 @@ def extractText(filename):
         print(bcolors.colorText('Failed!', 'FAIL'))
         return False
 
-def refineText(text):
-    newText = filename
-    return newText
+# def refineText(text):
+#     newText = filename
+#     return newText
 
 def makeNewFile(text, filename):
-    newFile = filename
-    return newFile
+    print ('start make word file... ', end = '')
+
+    try:
+        document = Document()
+        document.add_paragraph(text)
+        document.add_page_break()
+        document.save(filename+'.docx')
+        
+        print(bcolors.colorText('Success!', 'OKGREEN'))
+        return document
+    except:
+        print(bcolors.colorText('Failed!', 'FAIL'))
+        return False
 
 
 # start main
 print ("Start The Program To Make Script!!!!")
 subscriptFolder = './subscript'
 
-for index, filename in enumerate(search(subscriptFolder)):
-    print ('[%d] Start making script from [%s] ===========================' % (index+1, bcolors.colorText(filename, 'OKBLUE')))
-    extractText(filename)
-    # extractText('test')
+for index, fileinfo in enumerate(search(subscriptFolder)):
+    print ('[%d] Start making script from [%s] ===========================' % (index+1, bcolors.colorText(fileinfo['fullPath'], 'OKBLUE')))
+    
+    makeNewFile(extractText(fileinfo['fullPath']), 'script/'+fileinfo['name'])
