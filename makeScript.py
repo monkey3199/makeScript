@@ -53,7 +53,7 @@ def extractText(filename):
     
     try:
         subcriptFile = open(filename, 'r')
-        text = ''
+        text = filename + '\n\n'
         rmRegex = { 
             '^\d\n$': '',
             '^\d{2}:\d{2}:\d{2},\d+ --> \d{2}:\d{2}:\d{2},\d+$': '',
@@ -70,6 +70,7 @@ def extractText(filename):
                 p = re.compile(reg)
                 newLine = p.sub(rmRegex[reg], newLine)
 
+            if newLine: newLine += '\n'
             text += newLine
 
         print(bcolors.colorText('Success!', 'OKGREEN'))
